@@ -1,3 +1,4 @@
+import logging
 from typing import Annotated, Any, cast
 
 from fastapi import Depends, HTTPException, Request
@@ -6,7 +7,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from ..core.config import settings
 from ..core.db.database import async_get_db
 from ..core.exceptions.http_exceptions import ForbiddenException, RateLimitException, UnauthorizedException
-from ..core.logger import logging
 from ..core.security import TokenType, oauth2_scheme, verify_token
 from ..core.utils.rate_limit import rate_limiter
 from ..crud.crud_rate_limit import crud_rate_limits
@@ -34,7 +34,7 @@ async def get_current_user(
         user = await crud_users.get(db=db, username=token_data.username_or_email, is_deleted=False)
 
     if user:
-        if hasattr(user, 'model_dump'):
+        if hasattr(user, "model_dump"):
             return user.model_dump()
         else:
             return user
