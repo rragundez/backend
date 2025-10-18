@@ -28,6 +28,7 @@ class ColoredFormatter(logging.Formatter):
         record_copy.levelname = f"{log_color}{record_copy.levelname}{self.RESET}"
         return super().format(record_copy)
 
+
 def get_log_level() -> int:
     """Get log level from environment with validation."""
     log_level_name = os.getenv("LOG_LEVEL", "INFO").upper()
@@ -119,12 +120,3 @@ def setup_logging() -> None:
     # Log startup information
     logger = logging.getLogger(__name__)
     logger.info(f"Logging configured for {settings.ENVIRONMENT.value} environment")
-
-
-def get_logger(name: str) -> logging.Logger:
-    """Get a logger instance with the given name."""
-    return logging.getLogger(name)
-
-
-# Initialize logging when module is imported
-setup_logging()
