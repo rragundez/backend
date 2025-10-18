@@ -478,29 +478,6 @@ save 60 10000
 
 ### Application Optimization
 
-#### Logging Configuration
-
-```python
-# src/app/core/config.py
-import logging
-from pythonjsonlogger import jsonlogger
-
-def setup_production_logging():
-    logHandler = logging.StreamHandler()
-    formatter = jsonlogger.JsonFormatter(
-        "%(asctime)s %(name)s %(levelname)s %(message)s"
-    )
-    logHandler.setFormatter(formatter)
-    
-    logger = logging.getLogger()
-    logger.addHandler(logHandler)
-    logger.setLevel(logging.INFO)
-    
-    # Reduce noise from third-party libraries
-    logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
-    logging.getLogger("sqlalchemy.engine").setLevel(logging.WARNING)
-```
-
 #### Performance Monitoring
 
 ```python
