@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 
+from .health import router as health_router
 from .login import router as login_router
 from .logout import router as logout_router
 from .posts import router as posts_router
@@ -16,3 +17,4 @@ router.include_router(posts_router)
 router.include_router(tasks_router)
 router.include_router(tiers_router)
 router.include_router(rate_limits_router)
+router.include_router(health_router)
