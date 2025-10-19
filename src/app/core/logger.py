@@ -21,7 +21,7 @@ class ColoredFormatter(logging.Formatter):
     }
     RESET = "\033[0m"
 
-    def format(self, record):
+    def format(self, record: logging.LogRecord) -> str:
         # Create a copy of the record to avoid modifying the original
         record_copy = logging.makeLogRecord(record.__dict__)
         log_color = self.COLORS.get(record_copy.levelname, "")
@@ -33,7 +33,8 @@ def get_log_level() -> int:
     """Get log level from environment with validation."""
     log_level_name = os.getenv("LOG_LEVEL", "INFO").upper()
     try:
-        return getattr(logging, log_level_name)
+        level = getattr(logging, log_level_name)
+        return level
     except AttributeError:
         logging.warning(f"Invalid log level '{log_level_name}', defaulting to INFO")
         return logging.INFO
@@ -53,7 +54,7 @@ def get_logging_config() -> dict[str, Any]:
     log_file = log_dir / "app.log"
 
     # Base configuration
-    config = {
+    config: dict[str, Any] = {
         "version": 1,
         "disable_existing_loggers": False,
         "formatters": {
