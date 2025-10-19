@@ -32,12 +32,12 @@ class ColoredFormatter(logging.Formatter):
 def get_log_level() -> int:
     """Get log level from environment with validation."""
     log_level_name = os.getenv("LOG_LEVEL", "INFO").upper()
-    try:
-        level = getattr(logging, log_level_name)
-        return level
-    except AttributeError:
-        logging.warning(f"Invalid log level '{log_level_name}', defaulting to INFO")
-        return logging.INFO
+
+    level = logging.getLevelNamesMapping().get(log_level_name)
+    if level is None:
+        raise ValueError(f"Invalid log level '{log_level_name}'")
+
+    return level
 
 
 def ensure_log_directory() -> Path:
