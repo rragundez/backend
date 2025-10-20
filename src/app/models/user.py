@@ -19,6 +19,7 @@ class User(Base):
     email: Mapped[str] = mapped_column(String(50), unique=True, index=True)
     hashed_password: Mapped[str] = mapped_column(String)
     hashed_api_key: Mapped[str | None] = mapped_column(String, unique=True, index=True, default=None)
+    api_key_created_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
 
     profile_image_url: Mapped[str] = mapped_column(String, default="https://profileimageurl.com")
     uuid: Mapped[uuid_pkg.UUID] = mapped_column(UUID(as_uuid=True), default_factory=uuid7, unique=True)

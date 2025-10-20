@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Annotated
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
@@ -63,15 +63,15 @@ class UserTierUpdate(BaseModel):
     tier_id: int
 
 
-class UserApiKeyUpdate(BaseModel):
+class UserApiKeyUpdateInternal(BaseModel):
+    api_key_created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     hashed_api_key: Annotated[
-        str | None,
+        str,
         Field(
             min_length=64,
             max_length=64,
             pattern=r"^[a-f0-9]{64}$",
             examples=["3a7bd3e2360a3d29eea436fcfb7e44c735d117c42d1c1835420b6b9942dd4f1b"],
-            default=None,
         ),
     ]
 

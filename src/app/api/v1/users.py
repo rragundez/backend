@@ -7,12 +7,19 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from ...api.dependencies import get_current_superuser, get_current_user
 from ...core.db.database import async_get_db
 from ...core.exceptions.http_exceptions import DuplicateValueException, ForbiddenException, NotFoundException
-from ...core.security import blacklist_token, get_password_hash, oauth2_scheme
+from ...core.security import blacklist_token, generate_api_key, get_api_key_hash, get_password_hash, oauth2_scheme
 from ...crud.crud_rate_limit import crud_rate_limits
 from ...crud.crud_tier import crud_tiers
 from ...crud.crud_users import crud_users
 from ...schemas.tier import TierRead
-from ...schemas.user import UserCreate, UserCreateInternal, UserRead, UserTierUpdate, UserUpdate
+from ...schemas.user import (
+    UserApiKeyUpdateInternal,
+    UserCreate,
+    UserCreateInternal,
+    UserRead,
+    UserTierUpdate,
+    UserUpdate,
+)
 
 router = APIRouter(tags=["users"])
 
@@ -210,3 +217,29 @@ async def patch_user_tier(
 
     await crud_users.update(db=db, object=values.model_dump(), username=username)
     return {"message": f"User {db_user.name} Tier updated"}
+
+
+@router.patch("/user/{username}/api-key")
+async def patch_user_api_key(
+    request: Request,
+    username: str,
+    current_user: Annotated[dict, Depends(get_current_user)],
+    db: Annotated[AsyncSession, Depends(async_get_db)],
+) -> dict[str, str]:
+    db_user = await crud_users.get(db=db, username=username, is_deleted=False, schema_to_select=UserRead)
+    if db_user is None:
+        raise NotFoundException("User not found")
+
+    db_user = cast(UserRead, db_user)
+    if current_user["id"] != db_user.id:
+        raise ForbiddenException()
+
+    api_key = generate_api_key()
+    hashed_api_key = get_api_key_hash(api_key=api_key)
+    user_update_internal = UserApiKeyUpdateInternal(hashed_api_key=hashed_api_key)
+    await crud_users.update(db=db, object=user_update_internal.model_dump(), username=username)
+
+    return {
+        "message": f"User {db_user.name} API key updated",
+        "api_key": api_key,  # User needs to save this - it won't be shown again
+    }

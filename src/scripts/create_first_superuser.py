@@ -22,8 +22,10 @@ async def create_first_user(session: AsyncSession) -> None:
         username = settings.ADMIN_USERNAME
         hashed_password = get_password_hash(settings.ADMIN_PASSWORD)
         hashed_api_key = None
+        api_key_created_at = None
         if settings.ADMIN_API_KEY:
             hashed_api_key = get_api_key_hash(settings.ADMIN_API_KEY)
+            api_key_created_at = datetime.now(UTC)
 
         query = select(User).filter_by(email=email)
         result = await session.execute(query)
@@ -40,11 +42,12 @@ async def create_first_user(session: AsyncSession) -> None:
                 Column("email", String(50), nullable=False, unique=True, index=True),
                 Column("hashed_password", String, nullable=False),
                 Column("hashed_api_key", String, nullable=True),
+                Column("api_key_created_at", DateTime(timezone=True)),
                 Column("profile_image_url", String, default="https://profileimageurl.com"),
                 Column("uuid", UUID(as_uuid=True), default=uuid7, unique=True),
                 Column("created_at", DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False),
-                Column("updated_at", DateTime),
-                Column("deleted_at", DateTime),
+                Column("updated_at", DateTime(timezone=True)),
+                Column("deleted_at", DateTime(timezone=True)),
                 Column("is_deleted", Boolean, default=False, index=True),
                 Column("is_superuser", Boolean, default=False),
                 Column("tier_id", Integer, ForeignKey("tier.id"), index=True),
@@ -56,6 +59,7 @@ async def create_first_user(session: AsyncSession) -> None:
                 "username": username,
                 "hashed_password": hashed_password,
                 "hashed_api_key": hashed_api_key,
+                "api_key_created_at": api_key_created_at,
                 "is_superuser": True,
             }
 

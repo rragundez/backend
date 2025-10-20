@@ -1,5 +1,6 @@
 import hashlib
 import hmac
+import secrets
 from datetime import UTC, datetime, timedelta
 from enum import Enum
 from typing import Any, Literal, cast
@@ -42,6 +43,10 @@ def get_api_key_hash(api_key: str) -> str:
     secret = SECRET_KEY.get_secret_value().encode()
     hashed_api_key = hmac.new(secret, api_key.encode(), hashlib.sha256).hexdigest()
     return hashed_api_key
+
+
+def generate_api_key(length: int = 32) -> str:
+    return secrets.token_urlsafe(length)
 
 
 async def authenticate_user(username_or_email: str, password: str, db: AsyncSession) -> dict[str, Any] | Literal[False]:
