@@ -8,16 +8,19 @@ import redis.asyncio as redis
 from arq import create_pool
 from arq.connections import RedisSettings
 from fastapi import APIRouter, Depends, FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.docs import get_redoc_html, get_swagger_ui_html
 from fastapi.openapi.utils import get_openapi
 
 from ..api.dependencies import get_current_superuser
 from ..core.utils.rate_limit import rate_limiter
 from ..middleware.client_cache_middleware import ClientCacheMiddleware
+from ..middleware.security_headers_middleware import SecurityHeadersMiddleware
 from ..models import *  # noqa: F403
 from .config import (
     AppSettings,
     ClientSideCacheSettings,
+    CORSSettings,
     DatabaseSettings,
     EnvironmentOption,
     EnvironmentSettings,
@@ -205,6 +208,18 @@ def create_application(
 
     if isinstance(settings, ClientSideCacheSettings):
         application.add_middleware(ClientCacheMiddleware, max_age=settings.CLIENT_CACHE_MAX_AGE)
+
+    if isinstance(settings, CORSSettings):
+        application.add_middleware(
+            CORSMiddleware,
+            allow_origins=settings.CORS_ORIGINS,
+            allow_credentials=True,
+            allow_methods=["*"],
+            allow_headers=["*"],
+        )
+    if isinstance(settings, EnvironmentSettings):
+        if settings.ENVIRONMENT != EnvironmentOption.LOCAL:
+            application.add_middleware(SecurityHeadersMiddleware)
 
     if isinstance(settings, EnvironmentSettings):
         if settings.ENVIRONMENT != EnvironmentOption.PRODUCTION:
