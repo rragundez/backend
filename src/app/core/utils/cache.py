@@ -343,4 +343,4 @@ async def async_get_redis() -> AsyncGenerator[Redis, None]:
     try:
         yield client
     finally:
-        await client.aclose()  # Returns connection to pool
+        await client.aclose()  # type: ignore

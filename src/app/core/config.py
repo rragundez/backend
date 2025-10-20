@@ -67,8 +67,7 @@ class FirstUserSettings(BaseSettings):
     ADMIN_PASSWORD: str = config("ADMIN_PASSWORD", default="!Ch4ng3Th1sP4ssW0rd!")
 
 
-class TestSettings(BaseSettings):
-    ...
+class TestSettings(BaseSettings): ...
 
 
 class RedisCacheSettings(BaseSettings):
@@ -132,7 +131,6 @@ class CORSSettings(BaseSettings):
     CORS_ORIGINS_STR: str = config("CORS_ORIGINS", default="*")
 
     @computed_field
-    @property
     def CORS_ORIGINS(self) -> list[str]:
         return [origin.strip() for origin in self.CORS_ORIGINS_STR.split(",") if origin.strip()]
 
