@@ -1,14 +1,14 @@
 import asyncio
 import logging
-from uuid6 import uuid7 #126
 from datetime import UTC, datetime
 
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, MetaData, String, Table, insert, select
 from sqlalchemy.dialects.postgresql import UUID
+from uuid6 import uuid7  # 126
 
 from ..app.core.config import settings
 from ..app.core.db.database import AsyncSession, async_engine, local_session
-from ..app.core.security import get_password_hash
+from ..app.core.security import get_api_key_hash, get_password_hash
 from ..app.models.user import User
 
 logging.basicConfig(level=logging.INFO)
@@ -21,6 +21,9 @@ async def create_first_user(session: AsyncSession) -> None:
         email = settings.ADMIN_EMAIL
         username = settings.ADMIN_USERNAME
         hashed_password = get_password_hash(settings.ADMIN_PASSWORD)
+        hashed_api_key = None
+        if settings.ADMIN_API_KEY:
+            hashed_api_key = get_api_key_hash(settings.ADMIN_API_KEY)
 
         query = select(User).filter_by(email=email)
         result = await session.execute(query)
@@ -36,6 +39,7 @@ async def create_first_user(session: AsyncSession) -> None:
                 Column("username", String(20), nullable=False, unique=True, index=True),
                 Column("email", String(50), nullable=False, unique=True, index=True),
                 Column("hashed_password", String, nullable=False),
+                Column("hashed_api_key", String, nullable=True),
                 Column("profile_image_url", String, default="https://profileimageurl.com"),
                 Column("uuid", UUID(as_uuid=True), default=uuid7, unique=True),
                 Column("created_at", DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False),
@@ -51,6 +55,7 @@ async def create_first_user(session: AsyncSession) -> None:
                 "email": email,
                 "username": username,
                 "hashed_password": hashed_password,
+                "hashed_api_key": hashed_api_key,
                 "is_superuser": True,
             }
 

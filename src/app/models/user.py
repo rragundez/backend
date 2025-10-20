@@ -1,10 +1,10 @@
-from uuid6 import uuid7
-from datetime import UTC, datetime
 import uuid as uuid_pkg
+from datetime import UTC, datetime
 
 from sqlalchemy import DateTime, ForeignKey, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
+from uuid6 import uuid7
 
 from ..core.db.database import Base
 
@@ -13,11 +13,12 @@ class User(Base):
     __tablename__ = "user"
 
     id: Mapped[int] = mapped_column(autoincrement=True, primary_key=True, init=False)
-    
+
     name: Mapped[str] = mapped_column(String(30))
     username: Mapped[str] = mapped_column(String(20), unique=True, index=True)
     email: Mapped[str] = mapped_column(String(50), unique=True, index=True)
     hashed_password: Mapped[str] = mapped_column(String)
+    hashed_api_key: Mapped[str | None] = mapped_column(String, unique=True, index=True, default=None)
 
     profile_image_url: Mapped[str] = mapped_column(String, default="https://profileimageurl.com")
     uuid: Mapped[uuid_pkg.UUID] = mapped_column(UUID(as_uuid=True), default_factory=uuid7, unique=True)

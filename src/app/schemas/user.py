@@ -63,6 +63,19 @@ class UserTierUpdate(BaseModel):
     tier_id: int
 
 
+class UserApiKeyUpdate(BaseModel):
+    hashed_api_key: Annotated[
+        str | None,
+        Field(
+            min_length=64,
+            max_length=64,
+            pattern=r"^[a-f0-9]{64}$",
+            examples=["3a7bd3e2360a3d29eea436fcfb7e44c735d117c42d1c1835420b6b9942dd4f1b"],
+            default=None,
+        ),
+    ]
+
+
 class UserDelete(BaseModel):
     model_config = ConfigDict(extra="forbid")
 

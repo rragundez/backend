@@ -1,3 +1,5 @@
+import hashlib
+import hmac
 from datetime import UTC, datetime, timedelta
 from enum import Enum
 from typing import Any, Literal, cast
@@ -34,6 +36,12 @@ async def verify_password(plain_password: str, hashed_password: str) -> bool:
 def get_password_hash(password: str) -> str:
     hashed_password: str = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
     return hashed_password
+
+
+def get_api_key_hash(api_key: str) -> str:
+    secret = SECRET_KEY.get_secret_value().encode()
+    hashed_api_key = hmac.new(secret, api_key.encode(), hashlib.sha256).hexdigest()
+    return hashed_api_key
 
 
 async def authenticate_user(username_or_email: str, password: str, db: AsyncSession) -> dict[str, Any] | Literal[False]:

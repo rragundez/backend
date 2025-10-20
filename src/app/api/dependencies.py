@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from ..core.config import settings
 from ..core.db.database import async_get_db
 from ..core.exceptions.http_exceptions import ForbiddenException, RateLimitException, UnauthorizedException
-from ..core.security import TokenType, oauth2_scheme, verify_token
+from ..core.security import TokenType, get_api_key_hash, oauth2_scheme, verify_token
 from ..core.utils.rate_limit import rate_limiter
 from ..crud.crud_rate_limit import crud_rate_limits
 from ..crud.crud_tier import crud_tiers
@@ -80,7 +80,8 @@ async def get_api_key_user(api_key: str = Header(None), db: AsyncSession = Depen
         raise UnauthorizedException("API key required.")
 
     # Verify API key
-    user = await crud_users.get(db=db, api_key=api_key, is_deleted=False)
+    hashed_api_key = get_api_key_hash(api_key)
+    user = await crud_users.get(db=db, hashed_api_key=hashed_api_key, is_deleted=False)
     if user:
         if isinstance(user, dict):
             return user
@@ -139,3 +140,50 @@ async def rate_limiter_dependency(
     is_limited = await rate_limiter.is_rate_limited(db=db, user_id=user_id, path=path, limit=limit, period=period)
     if is_limited:
         raise RateLimitException("Rate limit exceeded.")
+
+
+# def require_tier(minimum_tier: str):
+#     """Factory function for tier-based dependencies."""
+
+#     async def check_user_tier(
+#         current_user: dict = Depends(get_current_user), db: AsyncSession = Depends(async_get_db)
+#     ) -> dict:
+#         tier_id = current_user.get("tier_id")
+#         if not tier_id:
+#             raise HTTPException(status_code=403, detail="No subscription tier")
+
+#         tier = await crud_tiers.get(db=db, id=tier_id)
+#         if not tier or tier["name"] != minimum_tier:
+#             raise HTTPException(status_code=403, detail=f"Requires {minimum_tier} tier")
+
+#         return current_user
+
+#     return check_user_tier
+
+
+# def require_resource_ownership(resource_type: str):
+#     """Factory function for resource ownership dependencies."""
+
+#     async def check_ownership(
+#         resource_id: int, current_user: dict = Depends(get_current_user), db: AsyncSession = Depends(async_get_db)
+#     ) -> dict:
+#         if resource_type == "post":
+#             resource = await crud_posts.get(db=db, id=resource_id)
+#             owner_field = "created_by_user_id"
+#         else:
+#             raise ValueError(f"Unknown resource type: {resource_type}")
+
+#         if not resource:
+#             raise HTTPException(status_code=404, detail="Resource not found")
+
+#         # Superusers can access any resource
+#         if current_user.get("is_superuser", False):
+#             return current_user
+
+#         # Check ownership
+#         if resource[owner_field] != current_user["id"]:
+#             raise HTTPException(status_code=403, detail="You don't own this resource")
+
+#         return current_user
+
+#     return check_ownership
