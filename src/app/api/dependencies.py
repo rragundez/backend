@@ -1,7 +1,7 @@
 import logging
-from typing import Annotated, Any, cast
+from typing import Annotated, cast
 
-from fastapi import Depends, HTTPException, Request
+from fastapi import Depends, Header, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..core.config import settings
@@ -23,7 +23,7 @@ DEFAULT_PERIOD = settings.DEFAULT_RATE_LIMIT_PERIOD
 
 async def get_current_user(
     token: Annotated[str, Depends(oauth2_scheme)], db: Annotated[AsyncSession, Depends(async_get_db)]
-) -> dict[str, Any] | None:
+) -> dict:
     token_data = await verify_token(token, TokenType.ACCESS, db)
     if token_data is None:
         raise UnauthorizedException("User not authenticated.")
@@ -34,10 +34,10 @@ async def get_current_user(
         user = await crud_users.get(db=db, username=token_data.username_or_email, is_deleted=False)
 
     if user:
-        if hasattr(user, "model_dump"):
-            return user.model_dump()
-        else:
+        if isinstance(user, dict):
             return user
+        elif hasattr(user, "model_dump"):
+            return user.model_dump()
 
     raise UnauthorizedException("User not authenticated.")
 
@@ -73,6 +73,38 @@ async def get_current_superuser(current_user: Annotated[dict, Depends(get_curren
         raise ForbiddenException("You do not have enough privileges.")
 
     return current_user
+
+
+async def get_api_key_user(api_key: str = Header(None), db: AsyncSession = Depends(async_get_db)) -> dict:
+    if not api_key:
+        raise UnauthorizedException("API key required.")
+
+    # Verify API key
+    user = await crud_users.get(db=db, api_key=api_key, is_deleted=False)
+    if user:
+        if isinstance(user, dict):
+            return user
+        elif hasattr(user, "model_dump"):
+            return user.model_dump()
+
+    raise UnauthorizedException("Invalid API key.")
+
+
+async def get_authenticated_user(
+    db: AsyncSession = Depends(async_get_db), token: str = Depends(oauth2_scheme), api_key: str = Header(None)
+) -> dict:
+    # Try JWT token first
+    if token:
+        try:
+            return await get_current_user(db=db, token=token)
+        except HTTPException:
+            pass
+
+    # Fall back to API key
+    if api_key:
+        return await get_api_key_user(api_key=api_key, db=db)
+
+    raise UnauthorizedException("Authentication required.")
 
 
 async def rate_limiter_dependency(
