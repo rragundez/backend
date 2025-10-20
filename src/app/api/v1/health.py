@@ -1,12 +1,17 @@
 import logging
 from datetime import UTC, datetime
+from typing import Annotated
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
+from redis.asyncio import Redis
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from ...core.config import settings
+from ...core.db.database import async_get_db
 from ...core.health import check_database_health, check_redis_health
 from ...core.schemas import HealthCheck, ReadyCheck
+from ...core.utils.cache import async_get_redis
 
 router = APIRouter(tags=["health"])
 
@@ -30,10 +35,10 @@ async def health():
 
 
 @router.get("/ready", response_model=ReadyCheck)
-async def ready():
-    database_status = await check_database_health()
+async def ready(redis: Annotated[Redis, Depends(async_get_redis)], db: Annotated[AsyncSession, Depends(async_get_db)]):
+    database_status = await check_database_health(db=db)
     LOGGER.debug(f"Database health check status: {database_status}")
-    redis_status = await check_redis_health()
+    redis_status = await check_redis_health(redis=redis)
     LOGGER.debug(f"Redis health check status: {redis_status}")
 
     # Overall status
