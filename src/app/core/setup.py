@@ -86,6 +86,7 @@ def lifespan_factory(
         | RedisQueueSettings
         | RedisRateLimiterSettings
         | EnvironmentSettings
+        | CORSSettings
     ),
     create_tables_on_start: bool = True,
 ) -> Callable[[FastAPI], _AsyncGeneratorContextManager[Any]]:
@@ -141,6 +142,7 @@ def create_application(
         | RedisQueueSettings
         | RedisRateLimiterSettings
         | EnvironmentSettings
+        | CORSSettings
     ),
     create_tables_on_start: bool = True,
     lifespan: Callable[[FastAPI], _AsyncGeneratorContextManager[Any]] | None = None,
@@ -212,11 +214,12 @@ def create_application(
     if isinstance(settings, CORSSettings):
         application.add_middleware(
             CORSMiddleware,
-            allow_origins=settings.CORS_ORIGINS,
+            allow_origins=settings.CORS_ORIGINS,  # type: ignore
             allow_credentials=True,
             allow_methods=["*"],
             allow_headers=["*"],
         )
+
     if isinstance(settings, EnvironmentSettings):
         if settings.ENVIRONMENT != EnvironmentOption.LOCAL:
             application.add_middleware(SecurityHeadersMiddleware)
